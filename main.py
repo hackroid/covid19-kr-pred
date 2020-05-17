@@ -15,12 +15,7 @@ class COVID(object):
         self.pre_proc()
 
     def pre_proc(self):
-        # patient_info:
-        # date formatting
-        self.patient_info["confirmed_date"] = pd.to_datetime(self.patient_info.confirmed_date)
-        self.patient_info["symptom_onset_date"] = pd.to_datetime(self.patient_info.symptom_onset_date)
-        self.patient_info["released_date"] = pd.to_datetime(self.patient_info.released_date)
-        self.patient_info["deceased_date"] = pd.to_datetime(self.patient_info.deceased_date)
+        # >>> patient_info:
         # fill missing value: infection_case, use etc
         self.patient_info["infection_case"].fillna("etc", inplace=True)
         # fill missing value: contact_number, use 0
@@ -69,8 +64,45 @@ class COVID(object):
         for idx, pid in fill_city_list_pid.iteritems():
             # print(self.patient_info.loc[idx, "province"])
             self.patient_info.loc[idx, "city"] = prov_most_city[self.patient_info.loc[idx, "province"]]
+        # date formatting
+        self.patient_info.loc[776, "symptom_onset_date"] = None
+        self.patient_info["confirmed_date"] = pd.to_datetime(self.patient_info.confirmed_date)
+        self.patient_info["symptom_onset_date"] = pd.to_datetime(self.patient_info.symptom_onset_date)
+        self.patient_info["released_date"] = pd.to_datetime(self.patient_info.released_date)
+        self.patient_info["deceased_date"] = pd.to_datetime(self.patient_info.deceased_date)
         print(self.patient_info.isnull().sum())
+        print(self.patient_num)
         # print(self.patient_info.head(10))
+
+        # >>> patient_route:
+        self.patient_route["date"] = pd.to_datetime(self.patient_route.date)
+        self.patient_info["start_date"] = pd.NaT
+        for i, row in self.patient_info.iterrows():
+            if row["symptom_onset_date"] is not pd.NaT:
+                pid = row["patient_id"]
+                dating = self.patient_route[self.patient_route["patient_id"] == pid]
+                if dating.shape[0] == 0:
+                    self.patient_info.loc[i, "start_date"] = row["symptom_onset_date"]
+                    continue
+                dating_b = dating[dating["date"] <= row["symptom_onset_date"]]
+                if dating_b.shape[0] == 0:
+                    self.patient_info.loc[i, "start_date"] = row["symptom_onset_date"]
+                    continue
+                self.patient_info.loc[i, "start_date"] = dating_b.tail(1).reset_index().at[0, "date"]
+            else:
+                pid = row["patient_id"]
+                dating = self.patient_route[self.patient_route["patient_id"] == pid]
+                if dating.shape[0] == 0:
+                    self.patient_info.loc[i, "start_date"] = row["confirmed_date"]
+                    continue
+                dating_b = dating[dating["date"] <= row["confirmed_date"]]
+                if dating_b.shape[0] == 0:
+                    self.patient_info.loc[i, "start_date"] = row["confirmed_date"]
+                    continue
+                self.patient_info.loc[i, "start_date"] = dating_b.tail(1).reset_index().at[0, "date"]
+        print(self.patient_info.isnull().sum())
+        # fill missing value: sym date
+        # self.patient_info.to_excel("./tmp/patient_info.xlsx")
 
 
 def main():
