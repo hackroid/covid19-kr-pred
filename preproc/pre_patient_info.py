@@ -12,6 +12,7 @@ def patient_info(file_path):
                            "sex",
                            "birth_year",
                            "age",
+                           "country",
                            "province",
                            "city",
                            "infection_case",
