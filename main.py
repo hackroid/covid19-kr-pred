@@ -1,6 +1,7 @@
 import random
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 import preproc as pp
 
@@ -47,7 +48,8 @@ class COVID(object):
         self.patient_info.loc[self.patient_info["age"].isnull(), "age"] = cal_year_list
         # drop country
         self.patient_info.drop(columns=["country"], inplace=True)
-        # city
+        # fill missing value: city
+        self.patient_info.loc[self.patient_info["city"] == "etc", "city"] = None
         self.patient_route["most_city"] = self.patient_route.groupby('patient_id').city.transform(
             lambda x: x.value_counts().index[0])
         fill_city_list_idx = self.patient_info.loc[self.patient_info["city"].isnull(), "city"].index
@@ -70,17 +72,15 @@ class COVID(object):
         self.patient_info["symptom_onset_date"] = pd.to_datetime(self.patient_info.symptom_onset_date)
         self.patient_info["released_date"] = pd.to_datetime(self.patient_info.released_date)
         self.patient_info["deceased_date"] = pd.to_datetime(self.patient_info.deceased_date)
-        print(self.patient_info.isnull().sum())
-        print(self.patient_num)
-        # print(self.patient_info.head(10))
 
         # >>> patient_route:
         self.patient_route["date"] = pd.to_datetime(self.patient_route.date)
         self.patient_info["start_date"] = pd.NaT
         for i, row in self.patient_info.iterrows():
+            pid = row["patient_id"]
+            dating = self.patient_route[self.patient_route["patient_id"] == pid]
+            self.patient_info.loc[self.patient_info["patient_id"] == pid, "group"] = self.group_map[row["infection_case"]]
             if row["symptom_onset_date"] is not pd.NaT:
-                pid = row["patient_id"]
-                dating = self.patient_route[self.patient_route["patient_id"] == pid]
                 if dating.shape[0] == 0:
                     self.patient_info.loc[i, "start_date"] = row["symptom_onset_date"]
                     continue
@@ -90,8 +90,6 @@ class COVID(object):
                     continue
                 self.patient_info.loc[i, "start_date"] = dating_b.tail(1).reset_index().at[0, "date"]
             else:
-                pid = row["patient_id"]
-                dating = self.patient_route[self.patient_route["patient_id"] == pid]
                 if dating.shape[0] == 0:
                     self.patient_info.loc[i, "start_date"] = row["confirmed_date"]
                     continue
@@ -103,10 +101,18 @@ class COVID(object):
         print(self.patient_info.isnull().sum())
         # fill missing value: sym date
         # self.patient_info.to_excel("./tmp/patient_info.xlsx")
+        print(self.group_map)
+        print(self.patient_info["group"].value_counts())
+
+    def draw(self):
+        patient_info = self.patient_info.copy()
+        # sex
+        sex = patient_info["sex"]
 
 
 def main():
     covid_model = COVID()
+    covid_model.draw()
 
 
 if __name__ == '__main__':
