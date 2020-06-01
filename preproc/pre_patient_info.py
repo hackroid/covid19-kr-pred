@@ -7,7 +7,7 @@ def patient_info(file_path):
     path = file_path + "PatientInfo.csv"
     data_info = pd.read_csv(path)
     # global_num, country, disease, infection_order deleted
-    data_info["group"] = True
+    data_info["group"] = False
     data_info = data_info[["patient_id",
                            "sex",
                            "birth_year",
