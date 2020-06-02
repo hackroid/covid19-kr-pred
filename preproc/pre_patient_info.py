@@ -18,6 +18,7 @@ def patient_info(file_path):
                            "infection_case",
                            "infected_by",
                            "contact_number",
+                           "disease",
                            "symptom_onset_date",
                            "confirmed_date",
                            "released_date",
